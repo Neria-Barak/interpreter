@@ -3,6 +3,7 @@ package com.lox;
 abstract class Expression {
 	interface Visitor<T> {
 		T visitBinaryExpression(Binary expression);
+		T visitTernaryExpression(Ternary expression);
 		T visitGroupingExpression(Grouping expression);
 		T visitLiteralExpression(Literal expression);
 		T visitUnaryExpression(Unary expression);
@@ -22,6 +23,26 @@ abstract class Expression {
 		@Override
 		<T> T accept(Visitor<T> visitor) {
 			return visitor.visitBinaryExpression(this);
+		}
+	}
+	static class Ternary extends Expression {
+		final Expression left;
+		final Token operator1;
+		final Expression middle;
+		final Token operator2;
+		final Expression right;
+
+		Ternary(Expression left, Token operator1, Expression middle, Token operator2, Expression right) {
+			this.left = left;
+			this.operator1 = operator1;
+			this.middle = middle;
+			this.operator2 = operator2;
+			this.right = right;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitTernaryExpression(this);
 		}
 	}
 	static class Grouping extends Expression {

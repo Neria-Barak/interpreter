@@ -24,6 +24,12 @@ class AstPrinter implements Expression.Visitor<String> {
     }
 
     @Override
+    public String visitTernaryExpression(Expression.Ternary expression) {
+        return parenthesize(expression.operator1.lexeme + expression.operator2.lexeme, 
+                            expression.left, expression.middle, expression.right);
+    }
+
+    @Override
     public String visitGroupingExpression(Expression.Grouping expression) {
         return parenthesize("group", expression.expression);
     }
