@@ -93,7 +93,7 @@ public class Parser {
 
         while (match(TokenType.SLASH, TokenType.STAR)) {
             Token operator = previous();
-            Expression right = comparison();
+            Expression right = unary();
             expression = new Expression.Binary(expression, operator, right);
         }
 
