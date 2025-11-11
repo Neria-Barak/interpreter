@@ -1,0 +1,5 @@
+print "hello"; /* 
+    this is a block comment
+    /* nestingggg */
+*/
+var x = 8;
