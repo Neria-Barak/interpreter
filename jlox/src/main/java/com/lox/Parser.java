@@ -1,5 +1,6 @@
 package com.lox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Parser {
@@ -16,21 +17,92 @@ public class Parser {
         return commaOp();
     }
 
-    public Expression parse() {
-        try {
-            return expression();
-        } catch (ParseError err) {
-            return null;
+    public List<Statement> parse() {
+        List<Statement> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            statements.add(declaration());
         } 
+        return statements;
+    }
+
+    private Statement declaration() {
+        try {
+            if (match(TokenType.VAR)) {
+                return varDeclaration();
+            }
+            return statement();
+        } catch (RuntimeError err) {
+            synchronize();
+            return null;
+        }
+    }
+
+    private Statement varDeclaration() {
+        Token varName = consume(TokenType.IDENTIFIER, "Expected variable name.");
+
+        Expression initializer = null;
+        if (match(TokenType.EQUAL)) {
+            initializer = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expectedd ';' after variable declaration.");
+        return new Statement.Var(varName, initializer);
+    }
+
+    private Statement statement() {
+        if (match(TokenType.LEFT_BRACE)) return new Statement.Block(block());
+        if (match(TokenType.PRINT)) return printStatement();
+        
+        return expressionStatement();
+    }
+
+    private List<Statement> block() {
+        List<Statement> statements = new ArrayList<>();
+
+        while (!check(TokenType.RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+
+        consume(TokenType.RIGHT_BRACE, "Expected '}' after block.");
+        return statements;
+    }
+
+    private Statement printStatement() {
+        Expression value = expression();
+        consume(TokenType.SEMICOLON, "Expected ';' after value.");
+        return new Statement.Print(value);
+    }
+
+    private Statement expressionStatement() {
+        Expression expression = expression();
+        consume(TokenType.SEMICOLON, "Expected ';' after expression.");
+        return new Statement.ExpressionStm(expression);
     }
 
     private Expression commaOp() {
-        Expression expression = ternary();
+        Expression expression = assignment();
 
         while (match(TokenType.COMMA)) {
             Token operator = previous();
             Expression right = ternary();
             expression = new Expression.Binary(expression, operator, right);
+        }
+
+        return expression;
+    }
+
+    private Expression assignment() {
+        Expression expression = ternary();
+
+        if (match(TokenType.EQUAL)) {
+            Token equals = previous();
+            Expression value = assignment();
+
+            if (expression instanceof Expression.Variable) {
+                Token name = ((Expression.Variable)expression).name;
+                return new Expression.Assign(name, value);
+            }
+
+            error(equals, "Invalid assignment target.");
         }
 
         return expression;
@@ -122,6 +194,10 @@ public class Parser {
             Expression expression = expression();
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
             return new Expression.Grouping(expression); 
+        }
+
+        if (match(TokenType.IDENTIFIER)) {
+            return new Expression.Variable(previous());
         }
 
         throw error(peek(), "Expected expression.");

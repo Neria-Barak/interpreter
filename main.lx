@@ -1,5 +1,5 @@
-print "hello"; /* 
-    this is a block comment
-    /* nestingggg */
-*/
-var x = 8;
+var a = 1;
+{
+  var a = a + 2;
+  print a;
+}

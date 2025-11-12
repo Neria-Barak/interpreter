@@ -1,8 +1,12 @@
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\AstPrinter.java
+C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Environment.java
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Expression.java
+C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Interpreter.java
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Lox.java
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Parser.java
+C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\RuntimeError.java
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Scanner.java
+C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Statement.java
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\Token.java
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\lox\TokenType.java
 C:\Users\neria\Projects\interpreter\jlox\src\main\java\com\tool\GenerateAst.java

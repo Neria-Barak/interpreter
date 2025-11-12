@@ -43,4 +43,14 @@ class AstPrinter implements Expression.Visitor<String> {
     public String visitUnaryExpression(Expression.Unary expression) {
         return parenthesize(expression.operator.lexeme, expression.right);
     }
+
+    @Override
+    public String visitVariableExpression(Expression.Variable expression) {
+        return expression.name.lexeme;
+    }
+
+    @Override
+    public String visitAssignExpression(Expression.Assign expression) {
+        return parenthesize("= " + expression.name.lexeme, expression.value);
+    }
 }

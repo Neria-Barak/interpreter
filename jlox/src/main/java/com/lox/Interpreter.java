@@ -1,14 +1,22 @@
 package com.lox;
 
-public class Interpreter implements Expression.Visitor<Object> {
+import java.util.List;
+
+public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor<Void> {
+    private Environment environment = new Environment();
     
-    public void interpret(Expression expression) {
+    public void interpret(List<Statement> statements) {
         try {
-            Object value = evaluate(expression);
-            System.out.println(stringify(value));
+            for (Statement statement : statements) {
+                execute(statement);
+            }
         } catch (RuntimeError err) {
             Lox.runtimeError(err);
         }
+    }
+
+    private void execute(Statement statement) {
+        statement.accept(this);
     }
 
     private String stringify(Object obj) {
@@ -27,6 +35,7 @@ public class Interpreter implements Expression.Visitor<Object> {
         return expression.accept(this);
     }
 
+    // Interpret expressions:
     @Override
     public Object visitBinaryExpression(Expression.Binary expression) {
         Object left = evaluate(expression.left);
@@ -118,6 +127,17 @@ public class Interpreter implements Expression.Visitor<Object> {
         return null;
     }
 
+    @Override
+    public Object visitAssignExpression(Expression.Assign expression) {
+        Object value = evaluate(expression.value);
+        environment.assign(expression.name, value);
+        return value;
+    }
+
+    public Object visitVariableExpression(Expression.Variable expression) {
+        return environment.get(expression.name);
+    }
+
     private boolean isTrue(Object obj) {
         if (obj == null) return false;
         if (obj instanceof Boolean) return (boolean)obj;
@@ -138,5 +158,48 @@ public class Interpreter implements Expression.Visitor<Object> {
     private void checkNumberOperands(Token operator, Object left, Object right) {
         if (left instanceof Double && right instanceof Double) return;
         throw new RuntimeError(operator, "Operands must be a numbers");
+    }
+
+    // Interpret statements:
+    @Override
+    public Void visitExpressionStmStatement(Statement.ExpressionStm statement) {
+        evaluate(statement.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStatement(Statement.Print statement) {
+        Object value = evaluate(statement.expression);
+        System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
+    public Void visitVarStatement(Statement.Var statement) {
+        Object value = null;
+        if (statement.initializer != null) {
+            value = evaluate(statement.initializer);
+        }
+        environment.define(statement.name.lexeme, value);
+        return null;
+    }
+
+    @Override
+    public Void visitBlockStatement(Statement.Block statement) {
+        executeBlock(statement.statements, new Environment(environment));
+        return null;
+    }
+
+    private void executeBlock(List<Statement> statements, Environment environment) {
+        Environment previous = this.environment;
+        try {
+            this.environment = environment;
+
+            for (Statement statement : statements) {
+                execute(statement);
+            }
+        } finally {
+            this.environment = previous;
+        }
     }
 }

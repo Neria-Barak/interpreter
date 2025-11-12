@@ -2,13 +2,29 @@ package com.lox;
 
 abstract class Expression {
 	interface Visitor<T> {
+		T visitAssignExpression(Assign expression);
 		T visitBinaryExpression(Binary expression);
 		T visitTernaryExpression(Ternary expression);
 		T visitGroupingExpression(Grouping expression);
 		T visitLiteralExpression(Literal expression);
 		T visitUnaryExpression(Unary expression);
+		T visitVariableExpression(Variable expression);
 	}
 
+	static class Assign extends Expression {
+		final Token name;
+		final Expression value;
+
+		Assign(Token name, Expression value) {
+			this.name = name;
+			this.value = value;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitAssignExpression(this);
+		}
+	}
 	static class Binary extends Expression {
 		final Expression left;
 		final Token operator;
@@ -81,6 +97,18 @@ abstract class Expression {
 		@Override
 		<T> T accept(Visitor<T> visitor) {
 			return visitor.visitUnaryExpression(this);
+		}
+	}
+	static class Variable extends Expression {
+		final Token name;
+
+		Variable(Token name) {
+			this.name = name;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitVariableExpression(this);
 		}
 	}
 
