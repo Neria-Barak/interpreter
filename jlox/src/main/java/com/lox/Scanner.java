@@ -31,6 +31,7 @@ public class Scanner {
         keywords.put("super", TokenType.SUPER);
         keywords.put("this", TokenType.THIS);
         keywords.put("var", TokenType.VAR);
+        keywords.put("break", TokenType.BREAK);
     }
 
     Scanner(String source) {

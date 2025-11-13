@@ -1,6 +1,7 @@
 package com.lox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Parser {
@@ -8,6 +9,7 @@ public class Parser {
 
     private final List<Token> tokens;
     private int current = 0;
+    private boolean inLoop = false;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -49,10 +51,146 @@ public class Parser {
     }
 
     private Statement statement() {
+        if (match(TokenType.FUN)) return function("function");
+        if (match(TokenType.FOR)) return forStatement();
+        if (match(TokenType.WHILE)) return whileStatement();
+        if (match(TokenType.IF)) return ifStatement();
         if (match(TokenType.LEFT_BRACE)) return new Statement.Block(block());
         if (match(TokenType.PRINT)) return printStatement();
+        if (match(TokenType.BREAK)) return breakStatement();
+        if (match(TokenType.RETURN)) return returnStatement();
         
         return expressionStatement();
+    }
+
+    private Statement returnStatement() {
+        Token keyword = previous();
+        Expression value = null;
+        if (!check(TokenType.SEMICOLON)) value = expression();
+        consume(TokenType.SEMICOLON, "Expected ';' after return value.");
+        return new Statement.Return(keyword, value);
+    }
+
+    private Statement.Function function(String kind) {
+        Token name = consume(TokenType.IDENTIFIER, "Expected " + kind + " name.");
+
+        consume(TokenType.LEFT_PAREN, "Expected '(' after " + kind + " name.");
+        List<Token> parameters = new ArrayList<>();
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (parameters.size() >= 255) {
+                    error(peek(), "Can't have more than 255 parameters");
+                }
+                parameters.add(consume(TokenType.IDENTIFIER, "Expected parameter name."));
+            } while (match(TokenType.COMMA));
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters");
+
+        consume(TokenType.LEFT_BRACE, "Expected '{' before " + kind + " body.");
+        List<Statement> body = block();
+        return new Statement.Function(name, parameters, body);
+    }
+
+    private Expression functionExpr() {
+        Token name = previous();
+        consume(TokenType.LEFT_PAREN, "Expected '(' after function declaration");
+        List<Token> parameters = new ArrayList<>();
+        if (!check(TokenType.RIGHT_PAREN)) {
+            do {
+                if (parameters.size() >= 255) {
+                    error(peek(), "Can't have more than 255 parameters");
+                }
+                parameters.add(consume(TokenType.IDENTIFIER, "Expected parameter name."));
+            } while (match(TokenType.COMMA));
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters");
+
+        consume(TokenType.LEFT_BRACE, "Expected '{' before function body.");
+        List<Statement> body = block();
+        return new Expression.Function(new Statement.Function(name, parameters, body));
+    }
+
+    private Statement breakStatement() {
+        Token keyword = previous();
+        if (!inLoop) error(keyword, "Break must be inside loop.");
+
+        consume(TokenType.SEMICOLON, "Expected ';' after break.");
+
+        return new Statement.Break(keyword);
+    }
+
+    private Statement forStatement() {
+        boolean outer_loop = !inLoop;
+        inLoop = true;
+
+
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'for'.");
+        Statement initializer;
+        if (match(TokenType.SEMICOLON)) {
+            initializer = null;
+        } else if (match(TokenType.VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        Expression condition = null;
+        if (!check(TokenType.SEMICOLON)) {
+            condition = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expected ';' after loop condition.");
+
+        Expression increment = null;
+        if (!check(TokenType.RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after for clauses.");
+
+        Statement body = statement();
+
+        // desugaring for to while
+        if (increment != null) {
+            body = new Statement.Block(
+                Arrays.asList(body, new Statement.ExpressionStm(increment))
+            );
+        }
+        if (condition == null) condition = new Expression.Literal(true);
+        body = new Statement.While(condition, body);
+        if (initializer != null) {
+            body = new Statement.Block(
+                Arrays.asList(initializer, body)
+            );
+        }
+
+        if (outer_loop) inLoop = false;
+        return body;
+    }
+
+    private Statement whileStatement() {
+        boolean outer_loop = !inLoop;
+        inLoop = true;
+
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'while'.");
+        Expression condition = expression();
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after while condition");
+
+        Statement body = statement();
+
+        if (outer_loop) inLoop = false;
+        return new Statement.While(condition, body);    
+    }
+
+    private Statement ifStatement() {
+        consume(TokenType.LEFT_PAREN, "Expected '(' after 'if'.");
+        Expression condition = expression();
+        consume(TokenType.RIGHT_PAREN, "Expected ')' after if condition");
+
+        Statement thenBranch = statement();
+        Statement elseBranch = null;
+        if (match(TokenType.ELSE)) {
+            elseBranch = statement();
+        }
+        return new Statement.If(condition, thenBranch, elseBranch);
     }
 
     private List<Statement> block() {
@@ -83,7 +221,7 @@ public class Parser {
 
         while (match(TokenType.COMMA)) {
             Token operator = previous();
-            Expression right = ternary();
+            Expression right = assignment();
             expression = new Expression.Binary(expression, operator, right);
         }
 
@@ -91,6 +229,7 @@ public class Parser {
     }
 
     private Expression assignment() {
+        if (match(TokenType.FUN)) return functionExpr();
         Expression expression = ternary();
 
         if (match(TokenType.EQUAL)) {
@@ -109,7 +248,7 @@ public class Parser {
     }
 
     private Expression ternary() {
-        Expression expression = equality();
+        Expression expression = or();
 
         if (match(TokenType.QUESTION)) {
             Token operator1 = previous();
@@ -119,6 +258,30 @@ public class Parser {
             Token operator2 = previous();
             Expression right = ternary();
             return new Expression.Ternary(expression, operator1, middle, operator2, right);
+        }
+
+        return expression;
+    }
+
+    private Expression or() {
+        Expression expression = and();
+
+        while (match(TokenType.OR)) {
+            Token operator = previous();
+            Expression right = and();
+            expression = new Expression.Logical(expression, operator, right);
+        }
+
+        return expression;
+    }
+
+    private Expression and() {
+        Expression expression = equality();
+
+        while (match(TokenType.AND)) {
+            Token operator = previous();
+            Expression right = equality();
+            expression = new Expression.Logical(expression, operator, right);
         }
 
         return expression;
@@ -178,7 +341,33 @@ public class Parser {
             Expression right = unary();
             return new Expression.Unary(operator, right);
         }
-        return primary();
+        return call();
+    }
+
+    private Expression call() {
+        Expression expression = primary();
+
+        while (match(TokenType.LEFT_PAREN)) {
+            List<Expression> arguments = new ArrayList<>();
+            if (!check(TokenType.RIGHT_PAREN)) arguments = arguments(); 
+            Token paren = consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments.");
+
+            expression = new Expression.Call(expression, paren, arguments);
+        }
+
+        return expression;
+    }
+
+    private List<Expression> arguments() {
+        List<Expression> arguments = new ArrayList<>();
+        do {
+            if (arguments.size() >= 255) {
+               error(peek(), "Can't have more than 255 arguments.");
+            }
+            arguments.add(assignment());
+        } while (match(TokenType.COMMA));
+
+        return arguments;
     }
 
     private Expression primary() {
@@ -229,6 +418,7 @@ public class Parser {
                 case WHILE:
                 case PRINT:
                 case RETURN:
+                case BREAK:
                     return;
                 default:
             }

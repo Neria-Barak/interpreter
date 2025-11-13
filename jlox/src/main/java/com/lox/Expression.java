@@ -1,5 +1,7 @@
 package com.lox;
 
+import java.util.List;
+
 abstract class Expression {
 	interface Visitor<T> {
 		T visitAssignExpression(Assign expression);
@@ -9,6 +11,9 @@ abstract class Expression {
 		T visitLiteralExpression(Literal expression);
 		T visitUnaryExpression(Unary expression);
 		T visitVariableExpression(Variable expression);
+		T visitLogicalExpression(Logical expression);
+		T visitCallExpression(Call expression);
+		T visitFunctionExpression(Function expression);
 	}
 
 	static class Assign extends Expression {
@@ -109,6 +114,50 @@ abstract class Expression {
 		@Override
 		<T> T accept(Visitor<T> visitor) {
 			return visitor.visitVariableExpression(this);
+		}
+	}
+	static class Logical extends Expression {
+		final Expression left;
+		final Token operator;
+		final Expression right;
+
+		Logical(Expression left, Token operator, Expression right) {
+			this.left = left;
+			this.operator = operator;
+			this.right = right;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitLogicalExpression(this);
+		}
+	}
+	static class Call extends Expression {
+		final Expression callee;
+		final Token paren;
+		final List<Expression> arguments;
+
+		Call(Expression callee, Token paren, List<Expression> arguments) {
+			this.callee = callee;
+			this.paren = paren;
+			this.arguments = arguments;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitCallExpression(this);
+		}
+	}
+	static class Function extends Expression {
+		final Statement.Function function;
+
+		Function(Statement.Function function) {
+			this.function = function;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitFunctionExpression(this);
 		}
 	}
 

@@ -19,14 +19,22 @@ public class GenerateAst {
             "Grouping : Expression expression",
             "Literal : Object value",
             "Unary : Token operator, Expression right",
-            "Variable : Token name"
+            "Variable : Token name",
+            "Logical : Expression left, Token operator, Expression right",
+            "Call : Expression callee, Token paren, List<Expression> arguments",
+            "Function : Statement.Function function"
         ));
 
         defineAst(outputDir, "Statement", Arrays.asList(
             "ExpressionStm : Expression expression",
             "Print : Expression expression",
             "Var : Token name, Expression initializer",
-            "Block : List<Statement> statements"
+            "Block : List<Statement> statements",
+            "If : Expression condition, Statement thenBranch, Statement elseBranch",
+            "While : Expression condition, Statement body",
+            "Break : Token keyword",
+            "Function : Token name, List<Token> params, List<Statement> body",
+            "Return : Token keyword, Expression value"
         ));
     }
 

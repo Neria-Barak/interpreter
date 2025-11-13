@@ -1,5 +1,274 @@
-var a = 1;
-{
-  var a = a + 2;
-  print a;
+// =======================================================
+//  FUNCTION TEST SUITE — with blank lines between tests
+// =======================================================
+
+// ---------- 1) Basic function and return ----------
+fun greet(name) {
+  print "Hello, " + name + "!";
+  return "Greeted " + name;
 }
+
+print greet("Alice"); // should print greeting + returned string
+
+print ""; // blank line
+
+
+// ---------- 2) Return without value (should return nil) ----------
+fun noValue() {
+  print "Inside noValue()";
+  return;
+}
+
+print "Return of noValue(): " + noValue(); // expect nil printed
+
+print ""; // blank line
+
+
+// ---------- 3) Implicit nil when reaching end ----------
+fun implicitNil() {
+  print "Inside implicitNil()";
+}
+
+print "Return of implicitNil(): " + implicitNil(); // expect nil
+
+print ""; // blank line
+
+
+// ---------- 4) Multiple returns ----------
+fun multiple(x) {
+  if (x < 0) return "negative";
+  if (x == 0) return "zero";
+  return "positive";
+}
+
+print multiple(-3);
+print multiple(0);
+print multiple(5);
+
+print ""; // blank line
+
+
+// ---------- 5) Local variables and shadowing ----------
+var x = "global";
+
+fun shadowTest(x) {
+  print "param x = " + x;
+  var x = "local";
+  print "inner x = " + x;
+  return "done";
+}
+
+print shadowTest("param");
+print "global x still = " + x;
+
+print ""; // blank line
+
+
+// ---------- 6) Early return ----------
+fun early() {
+  print "before return";
+  return "returned early";
+  print "after return"; // should not execute
+}
+
+print early();
+
+print ""; // blank line
+
+
+// ---------- 7) Nested function with closure ----------
+fun outer(a) {
+  var b = a + 10;
+  fun inner(c) {
+    return a + b + c;
+  }
+  return inner(5);
+}
+
+print outer(3); // expect 3 + 13 + 5 = 21
+
+print ""; // blank line
+
+
+// ---------- 8) Closure with persistent state ----------
+fun makeCounter() {
+  var count = 0;
+  fun next() {
+    count = count + 1;
+    return count;
+  }
+  return next;
+}
+
+var c1 = makeCounter();
+print c1(); // 1
+print c1(); // 2
+print c1(); // 3
+
+var c2 = makeCounter();
+print c2(); // 1 (fresh environment)
+
+print ""; // blank line
+
+
+// ---------- 9) Recursion ----------
+fun factorial(n) {
+  if (n <= 1) return 1;
+  return n * factorial(n - 1);
+}
+
+print "factorial(5) = " + factorial(5); // 120
+
+print ""; // blank line
+
+
+// ---------- 10) Nested recursion and multiple calls ----------
+fun fib(n) {
+  if (n < 2) return n;
+  return fib(n - 1) + fib(n - 2);
+}
+
+print "fib(0) = " + fib(0);
+print "fib(1) = " + fib(1);
+print "fib(6) = " + fib(6); // 8
+
+print ""; // blank line
+
+
+// ---------- 11) Return from inside nested blocks ----------
+fun blockReturn(x) {
+  {
+    {
+      if (x > 5) {
+        return "big";
+      }
+    }
+  }
+  return "small";
+}
+
+print blockReturn(10);
+print blockReturn(2);
+
+print ""; // blank line
+
+
+// ---------- 12) Returning functions (higher-order) ----------
+fun makeAdder(n) {
+  fun add(x) {
+    return n + x;
+  }
+  return add;
+}
+
+var add5 = makeAdder(5);
+var add10 = makeAdder(10);
+print add5(3);   // 8
+print add10(3);  // 13
+
+print ""; // blank line
+
+
+// ---------- 13) Function values and reassignment ----------
+fun hello() {
+  return "Hello!";
+}
+
+var f = hello;
+print f(); // should call hello
+
+f = fun() { return "Anonymous!"; };
+print f();
+
+print ""; // blank line
+
+
+// ---------- 14) Function calling function returning nil ----------
+fun doNothing() {}
+fun callDoNothing() {
+  print "Returned from doNothing(): " + doNothing();
+}
+callDoNothing();
+
+print ""; // blank line
+
+
+// ---------- 15) Shadowed function name ----------
+fun test() { return "first"; }
+print test(); // "first"
+fun test() { return "second"; }
+print test(); // "second"
+
+print ""; // blank line
+
+
+// ---------- 16) Return from inside loop ----------
+fun loopBreakReturn() {
+  var i = 0;
+  while (i < 5) {
+    if (i == 3) return i;
+    i = i + 1;
+  }
+  return 999;
+}
+
+print "loopBreakReturn = " + loopBreakReturn(); // expect 3
+
+print ""; // blank line
+
+
+// ---------- 17) Return value from closure after outer returns ----------
+fun outerFunc() {
+  var x = 100;
+  fun getX() { return x; }
+  return getX;
+}
+
+var fn = outerFunc();
+print fn(); // should still access x = 100
+
+print ""; // blank line
+
+
+// ---------- 18) Deeply nested closures ----------
+fun makeAdderFactory() {
+  fun addN(n) {
+    fun addM(m) {
+      fun addX(x) {
+        return n + m + x;
+      }
+      return addX;
+    }
+    return addM;
+  }
+  return addN;
+}
+
+print makeAdderFactory()(1)(2)(3); // expect 6
+
+print ""; // blank line
+
+
+// ---------- 19) Return ignored ----------
+fun sayHello() {
+  print "Hi!";
+  return "should be ignored";
+}
+
+sayHello(); // should print only "Hi!"
+
+print ""; // blank line
+
+
+// ---------- 20) Ensure returns don’t leak scope ----------
+fun scopeReturn() {
+  var a = "outer";
+  {
+    var a = "inner";
+    return a;
+  }
+}
+
+print "scopeReturn(): " + scopeReturn(); // "inner"
+
+print ""; // blank line
