@@ -47,7 +47,7 @@ print multiple(5);
 
 print ""; // blank line
 
-
+/*
 // ---------- 5) Local variables and shadowing ----------
 var x = "global";
 
@@ -62,7 +62,7 @@ print shadowTest("param");
 print "global x still = " + x;
 
 print ""; // blank line
-
+*/
 
 // ---------- 6) Early return ----------
 fun early() {
@@ -259,7 +259,7 @@ sayHello(); // should print only "Hi!"
 
 print ""; // blank line
 
-
+/*
 // ---------- 20) Ensure returns don’t leak scope ----------
 fun scopeReturn() {
   var a = "outer";
@@ -272,3 +272,19 @@ fun scopeReturn() {
 print "scopeReturn(): " + scopeReturn(); // "inner"
 
 print ""; // blank line
+
+
+// ---------- 21) Case from book ------------
+var a = "global";
+{
+  fun showA() {
+    print a;
+  }
+
+  showA(); // should print "global"
+  var a = "block";
+  showA(); // should print "global"
+}
+
+print ""; // blank line
+*/

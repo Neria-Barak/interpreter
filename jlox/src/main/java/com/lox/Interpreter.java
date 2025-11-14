@@ -1,12 +1,15 @@
 package com.lox;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor<Void> {
     final Environment globals = new Environment();
     private Environment environment = globals;
     private boolean isBreaking = false;
+    private final Map<Expression, Integer> locals = new HashMap<>();
 
     Interpreter() {
         globals.define("clock", new LoxCallable() {
@@ -23,6 +26,19 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         });
     }
     
+    public void resolve(Expression expression, int depth) {
+        locals.put(expression, depth);
+    }
+
+    private Object lookupVariable(Token name, Expression expression) {
+        Integer distance = locals.get(expression);
+        if (distance != null) {
+            return environment.getAt(distance, name.lexeme);
+        } else {
+            return globals.get(name);
+        }
+    }
+
     public void interpret(List<Statement> statements) {
         try {
             for (Statement statement : statements) {
@@ -146,13 +162,21 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
     @Override
     public Object visitAssignExpression(Expression.Assign expression) {
         Object value = evaluate(expression.value);
-        environment.assign(expression.name, value);
+
+        Integer distance = locals.get(expression);
+        if (distance != null) {
+            environment.assignAt(distance, expression.name, value);
+        } else {
+            globals.assign(expression.name, value);
+        }
+
         return value;
     }
 
     @Override
     public Object visitVariableExpression(Expression.Variable expression) {
-        return environment.get(expression.name);
+        // return environment.get(expression.name);
+        return lookupVariable(expression.name, expression);
     }
 
     @Override
