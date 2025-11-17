@@ -25,7 +25,8 @@ public class GenerateAst {
             "Function : Statement.Function function",
             "Get : Expression object, Token name",
             "Set : Expression object, Token name, Expression value",
-            "This : Token keyword"
+            "This : Token keyword",
+            "Super : Token keyword, Token method"
         ));
 
         defineAst(outputDir, "Statement", Arrays.asList(
@@ -38,7 +39,8 @@ public class GenerateAst {
             "Break : Token keyword",
             "Function : Token name, List<Token> params, List<Statement> body",
             "Return : Token keyword, Expression value",
-            "Class : Token name, List<Statement.Function> methods, List<Statement.Function> getters"
+            "Class : Token name, Expression.Variable superclass, " + 
+                     "List<Statement.Function> methods, List<Statement.Function> getters"
         ));
     }
 

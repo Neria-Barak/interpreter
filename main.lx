@@ -1,480 +1,272 @@
-// class_tests.lox
-// A large suite of tests for classes, fields, methods, this, and constructors.
-// Run as a single file. Each test block is separated by blank lines.
+// Lox test suite — exercise as many language features as practical.
+// Each test prints its results, then prints a blank line (print "";)
+// No arrays used. Adjust expected values if your interpreter differs.
 
+//
+// 1) Arithmetic, precedence, unary, grouping
+//
+print 1 + 2 * 3; // expect 7
+print (1 + 2) * 3; // expect 9
+print -5 + 2; // expect -3
+print 3 > 2 and 2 < 4; // expect true
+print "";
 
-// -----------------------------------------------------------------------------
-// 1) Basic class + constructor + field initialization
-// -----------------------------------------------------------------------------
+//
+// 2) Variables, reassignment, shadowing, block scope
+//
+var a = "global";
+{
+var a = "inner";
+print a; // expect "inner"
+}
+print a; // expect "global"
+fun scopeTest() {
+var a = "func";
+{
+var a = "nested";
+print a; // expect "nested"
+}
+print a; // expect "func"
+}
+scopeTest();
+print "";
+
+//
+// 3) If / else
+//
+fun check(x) {
+if (x > 0) {
+print "positive";
+} else if (x < 0) {
+print "negative";
+} else {
+print "zero";
+}
+}
+check(5); // positive
+check(-2); // negative
+check(0); // zero
+print "";
+
+//
+// 4) Loops and break
+//
+var i = 0;
+while (true) {
+i = i + 1;
+if (i == 3) break;
+}
+print i; // expect 3
+print "";
+
+/*
+//
+// 5) Functions: parameters, return, nil when none returned
+//
+fun add(x, y) {
+return x + y;
+}
+print add(10, 20); // expect 30
+
+fun noReturn() {
+var x = 1;
+}
+print noReturn(); // expect nil
+print "";
+*/
+
+//
+// 6) First-class functions and assignment
+//
+fun mul(a, b) {
+return a * b;
+}
+var times = mul;
+print times(4, 5); // expect 20
+print "";
+
+//
+// 7) Closures and captured state
+//
+fun makeCounter() {
+var count = 0;
+fun inc() {
+count = count + 1;
+return count;
+}
+return inc;
+}
+var c = makeCounter();
+print c(); // 1
+print c(); // 2
+print c(); // 3
+print "";
+
+//
+// 8) Closure captures lexical environment (test lifetimes)
+//
+var later;
+{
+var v = "captured";
+fun show() { return v; }
+later = show;
+}
+print later(); // expect "captured"
+print "";
+
+//
+// 9) Recursion
+//
+fun fact(n) {
+if (n <= 1) return 1;
+return n * fact(n - 1);
+}
+print fact(5); // expect 120
+print "";
+
+//
+// 10) Equality and nil
+//
+print (1 == 1); // true
+print (1 != 2); // true
+print (nil == nil); // true
+print (nil != 0); // true (nil !== any non-nil)
+print "";
+
+//
+// 11) Strings concatenation and to-string
+//
+print "hello " + "world"; // expect "hello world"
+print "";
+
+//
+// 12) Logical operators short-circuit behavior
+//
+fun left() {
+print "left-evaluated";
+return true;
+}
+fun right() {
+print "right-evaluated";
+return false;
+}
+print (left() or right()); // left-evaluated, then prints true
+print (false and right()); // short-circuits, right not evaluated, prints false
+print "";
+
+//
+// 13) Methods, fields, this, constructors (init)
+//
 class Point {
-  init(x, y) {
-    this.x = x;
-    this.y = y;
-  }
-
-  toString() {
-    return "(" + this.x + "," + this.y + ")";
-  }
-
-  distanceFromOrigin() {
-    return (this.x * this.x + this.y * this.y);
-  }
+init(x, y) {
+this.x = x;
+this.y = y;
 }
-
+dist() {
+return (this.x * this.x) + (this.y * this.y);
+}
+}
 var p = Point(3, 4);
-print p.toString();          // expected: (3,4)
-print p.distanceFromOrigin(); // expected: 25
-
+print p.dist(); // expect 25
 print "";
 
-// -----------------------------------------------------------------------------
-// 2) Fields default to nil when not set
-// -----------------------------------------------------------------------------
-class Empty {}
-var e = Empty();
-//print e.someField;           // expected: nil
-
-// Setting a field later
-e.someField = "set later";
-print e.someField;           // expected: set later
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 3) Methods can read and write fields
-// -----------------------------------------------------------------------------
-class Counter {
-  init() {
-    this.count = 0;
-  }
-
-  inc() {
-    this.count = this.count + 1;
-    return this.count;
-  }
-
-  add(n) {
-    this.count = this.count + n;
-    return this.count;
-  }
+//
+// 14) Methods as closures (method bound to instance)
+//
+class Acc {
+init() { this.v = 0; }
+inc() { this.v = this.v + 1; return this.v; }
 }
-
-var c = Counter();
-print c.inc();    // expected: 1
-print c.inc();    // expected: 2
-print c.add(8);   // expected: 10
-print c.count;    // expected: 10
-
+var a1 = Acc();
+var m = a1.inc;
+print m(); // expect 1 (method bound to receiver)
+print m(); // expect 2
 print "";
 
-// -----------------------------------------------------------------------------
-// 4) Multiple independent instances
-// -----------------------------------------------------------------------------
-var a = Counter();
-var b = Counter();
-a.add(5);
-print a.count; // expected: 5
-print b.count; // expected: 0
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 5) Constructor calling other methods / ordering
-// -----------------------------------------------------------------------------
-class Person {
-  init(name) {
-    // call a helper method from init
-    this.setName(name);
-  }
-
-  setName(n) {
-    this.name = n;
-  }
-
-  greet() {
-    print "Hi, I'm " + this.name + "!";
-  }
+//
+// 15) Inheritance and super
+//
+class A {
+greet() { return "A"; }
 }
-
-var p1 = Person("Neria");
-p1.greet(); // expected: Hi, I'm Neria!
-
+class B < A {
+greet() { return "B-" + super.greet(); }
+}
+var b = B();
+print b.greet(); // expect "B-A"
 print "";
 
-// -----------------------------------------------------------------------------
-// 6) Methods returning functions that capture `this` (closure captures `this`)
-// -----------------------------------------------------------------------------
-class Greeter {
-  init(name) {
-    this.name = name;
-  }
-
-  makeGreeter() {
-    fun inner() {
-      return "hello " + this.name;
-    }
-    return inner;
-  }
+//
+// 16) Overriding and calling super with state
+//
+class Animal {
+init(name) { this.name = name; }
+speak() { return this.name + " makes noise"; }
 }
-
-var g = Greeter("Ada");
-var greeterFn = g.makeGreeter();
-print greeterFn(); // expected: hello Ada
-
-// Ensure `this` capture works even if we call the returned function later after changes:
-g.name = "Grace";
-print greeterFn(); // expected: hello Grace
-
+class Dog < Animal {
+speak() { return super.speak() + " -> woof"; }
+}
+var dog = Dog("Rex");
+print dog.speak(); // "Rex makes noise -> woof"
 print "";
-
-// -----------------------------------------------------------------------------
-// 7) Methods bound to instance when retrieved as values
-// -----------------------------------------------------------------------------
-class Adder {
-  init(base) {
-    this.base = base;
-  }
-  add(n) {
-    return this.base + n;
-  }
-}
-
-var ad = Adder(100);
-var fn = ad.add; // should be a bound method capturing `this` = ad
-print fn(23);    // expected: 123
-
-// If you assign a method from one instance to call for another instance:
-var ad2 = Adder(5);
-var fn2 = ad.add; // still bound to ad
-print fn2(1);     // expected: 101 (if bound), or runtime error if your impl doesn't bind
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 8) Constructor implicitly returns the instance (init); explicit return tests
-// -----------------------------------------------------------------------------
-class Returner {
-  init(x) {
-    this.x = x;
-    // returning a value from init is usually an error in Crafting Interpreters.
-    // The behavior your interpreter has may vary. Uncomment to test behavior.
-    // return 123; // expected: runtime error (if implemented like the book), or ignored.
-  }
-
-  getX() {
-    return this.x;
-  }
-}
-
-var r = Returner(7);
-print r.getX(); // expected: 7
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 9) Methods can call other methods on same instance using this
-// -----------------------------------------------------------------------------
-class Chain {
-  init(v) {
-    this.v = v;
-  }
-  add(n) {
-    this.v = this.v + n;
-    return this;
-  }
-  mul(n) {
-    this.v = this.v * n;
-    return this;
-  }
-  value() {
-    return this.v;
-  }
-}
-
-var ch = Chain(1);
-ch.add(2).mul(5).add(3);
-print ch.value(); // expected: ((1+2)*5)+3 = 18
 
 /*
-print "";
-
-// -----------------------------------------------------------------------------
-// 10) Accessing a missing field should yield nil (or runtime error depending on implementation)
-// -----------------------------------------------------------------------------
-class Maybe {
-  init() {}
-  test() {
-    return this.noSuchField;
-  }
+//
+// 17) Multiple closures capturing different variables
+//
+fun outerMaker() {
+var x = 10;
+fun getX() { return x; }
+var y = 20;
+fun getY() { return y; }
+return [getX, getY]; // NOTE: can't use arrays in your interpreter; below we avoid arrays.
 }
-
-print Maybe().test(); // expected: nil
+// Instead, simulate returning two closures via an object:
+class Pair {
+init(a, b) { this.a = a; this.b = b; }
+}
+fun makePairOfClosures() {
+var x = 7;
+fun getX() { return x; }
+var y = 8;
+fun getY() { return y; }
+return Pair(getX, getY);
+}
+var pair = makePairOfClosures();
+print pair.a(); // expect 7
+print pair.b(); // expect 8
+print "";
 */
 
-/*
+//
+// 18) Ensure initializer returns instance (implicit)
+//
+class C {
+init() { this.ok = "yes"; }
+check() { return this.ok; }
+}
+var cObj = C();
+print cObj.check(); // expect "yes"
 print "";
 
-// -----------------------------------------------------------------------------
-// 11) Fields and methods coexist: instance fields should not interfere with class methods
-// -----------------------------------------------------------------------------
-class Mix {
-  init() {
-    this.foo = "field";
-  }
-
-  foo() {
-    return "method";
-  }
-
-  callFoo() {
-    // Access the field
-    var f = this.foo;
-    // Call the method via explicit invocation
-    var m = this.foo(); // If your language allows both, this will depend on resolution rules.
-    return [f, m];
-  }
+//
+// 19) Higher-order functions and composition
+//
+fun compose(f, g) {
+fun h(x) { return f(g(x)); }
+return h;
 }
-
-var m = Mix();
-print m.foo;      // expected: field
-// The next line may be ambiguous depending on how you resolved fields vs methods.
-// If fields shadow methods, m.foo() could be an error (not a function). If methods win, it calls method.
-// print m.foo(); // ambiguous - uncomment to test your interpreter's resolution rules.
-*/
-
+fun inc1(n) { return n + 1; }
+fun mul2(n) { return n * 2; }
+var doubInc = compose(inc1, mul2);
+print doubInc(3); // mul2(3)=6, inc1(6)=7 -> expect 7
 print "";
 
-// -----------------------------------------------------------------------------
-// 12) Methods that return `this` allow chaining
-// -----------------------------------------------------------------------------
-class Builder {
-  init() {
-    this.parts = "";
-  }
-  add(part) {
-    this.parts = this.parts + part;
-    return this;
-  }
-  result() {
-    return this.parts;
-  }
-}
-
-var b = Builder();
-print b.add("a").add("b").add("c").result(); // expected: abc
-
+//
+// 20) Edge: calling a non-function should error in a real interpreter — here we only test valid call
+//
+fun identity(x) { return x; }
+print identity("works");
 print "";
 
-// -----------------------------------------------------------------------------
-// 13) Deep nested `this` capture with local functions and closures
-// -----------------------------------------------------------------------------
-class Deep {
-  init(name) {
-    this.name = name;
-  }
-
-  makeDeeper() {
-    fun level1() {
-      fun level2() {
-        fun level3() {
-          return this.name;
-        }
-        return level3;
-      }
-      return level2;
-    }
-    return level1;
-  }
-}
-
-var d = Deep("deepName");
-var l1 = d.makeDeeper();
-var l2 = l1();
-var l3 = l2();
-print l3(); // expected: deepName
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 14) Mutating `this` from nested functions
-// -----------------------------------------------------------------------------
-class Mutate {
-  init(x) {
-    this.x = x;
-  }
-
-  getAndMutate() {
-    fun inner() {
-      this.x = this.x + 10;
-      return this.x;
-    }
-    print inner(); // expected: original + 10
-    return this.x;
-  }
-}
-
-var mm = Mutate(2);
-print mm.getAndMutate(); // expected prints: 12 (inner), then return 12
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 15) Constructor throws if used without parentheses? test both ways.
-// -----------------------------------------------------------------------------
-class NoArgs {
-  init() {
-    this.ok = "ok";
-  }
-}
-
-// In Lox you call constructors like NoArgs(). If your language allows NoArgs without (), test both:
-// var na = NoArgs;      // ambiguous: class object, not instance
-// print na;             // runtime-dependent
-var na2 = NoArgs();
-print na2.ok; // expected: ok
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 16) Using `this` outside of methods should be a runtime error (invalid use)
-// -----------------------------------------------------------------------------
-fun notAMethod() {
-  // print this; // expected: runtime error when executed. Uncomment to test error handling.
-}
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 17) Methods can return functions bound to `this`, and passing them around works
-// -----------------------------------------------------------------------------
-class BoundTest {
-  init(name) {
-    this.name = name;
-  }
-
-  maker() {
-    fun f(a) {
-      return this.name + ":" + a;
-    }
-    return f;
-  }
-}
-
-var bt = BoundTest("X");
-var bound = bt.maker();
-print bound("1"); // expected: X:1
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 18) Ensure instance identity is preserved (== not defined in Lox; use identity test via field)
-// -----------------------------------------------------------------------------
-class Ident {
-  init(id) {
-    this.id = id;
-  }
-}
-
-var i1 = Ident(1);
-var i2 = Ident(1);
-print i1.id; // expected: 1
-print i2.id; // expected: 1
-// If interpreter has identity equality, test it; otherwise check behavior via fields.
-// print i1 == i2; // optional, depends on your interpreter
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 19) Large example: A small "class bank" with deposit/withdraw and error checks
-// -----------------------------------------------------------------------------
-class Bank {
-  init(name, balance) {
-    this.name = name;
-    this.balance = balance;
-  }
-
-  deposit(a) {
-    this.balance = this.balance + a;
-    return this.balance;
-  }
-
-  withdraw(a) {
-    if (a > this.balance) {
-      return "insufficient";
-    }
-    this.balance = this.balance - a;
-    return this.balance;
-  }
-
-  transferTo(other, amount) {
-    var w = this.withdraw(amount);
-    if (w == "insufficient") return false;
-    other.deposit(amount);
-    return true;
-  }
-}
-
-var accA = Bank("A", 100);
-var accB = Bank("B", 25);
-print accA.deposit(50); // expected: 150
-print accA.withdraw(20); // expected: 130
-print accA.transferTo(accB, 200); // expected: false
-print accA.transferTo(accB, 30);  // expected: true
-print accA.balance; // expected: 100
-print accB.balance; // expected: 55
-
-/*
-print "";
-
-// -----------------------------------------------------------------------------
-// 20) Stress test: create many instances and ensure no cross-talk
-// -----------------------------------------------------------------------------
-class Holder {
-  init(i) {
-    this.i = i;
-  }
-  get() {
-    return this.i;
-  }
-}
-
-var arr = [];
-var n = 10;
-var idx = 0;
-while (idx < n) {
-  arr[idx] = Holder(idx);
-  idx = idx + 1;
-}
-
-idx = 0;
-while (idx < n) {
-  print arr[idx].get(); // expected: 0 1 2 ... 9 on separate lines
-  idx = idx + 1;
-}
-*/
-
-print "";
-
-// -----------------------------------------------------------------------------
-// 21) Testing getters
-// -----------------------------------------------------------------------------
-
-class Circle {
-  init(radius) {
-    this.radius = radius;
-  }
-
-  area {
-    return 3.141592653 * this.radius * this.radius;
-  }
-}
-
-var circle = Circle(4);
-print circle.area; // Prints roughly "50.2655".
-
-print "";
-
-// -----------------------------------------------------------------------------
-// End of tests
-// -----------------------------------------------------------------------------
-print "---- DONE ----";
+// End of test suite. If any test fails, check: scoping, closures, methods, super, returns, and truthiness.

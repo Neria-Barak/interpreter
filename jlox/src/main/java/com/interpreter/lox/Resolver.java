@@ -10,7 +10,7 @@ public class Resolver implements Expression.Visitor<Void>, Statement.Visitor<Voi
         NONE, FUNCTION, METHOD, INITIALIZER
     }
     private enum ClassType {
-        NONE, CLASS
+        NONE, CLASS, SUBCLASS
     }
     private class VarData {
         public Token declaration = null;
@@ -163,6 +163,18 @@ public class Resolver implements Expression.Visitor<Void>, Statement.Visitor<Voi
         declare(statement.name);
         define(statement.name);
 
+        if (statement.superclass != null) {
+            if (statement.name.lexeme.equals(statement.superclass.name.lexeme)) {
+                Lox.error(statement.superclass.name, "A class can't inherit from itself.");
+            }
+            currentClass = ClassType.SUBCLASS;
+            resolve(statement.superclass);
+            beginScope();
+            VarData data = new VarData(null);
+            data.used = data.initialized = true;
+            scopes.peek().put("super", data);
+        }
+
         beginScope();
         VarData data = new VarData(null);
         data.used = data.initialized = true;
@@ -182,6 +194,8 @@ public class Resolver implements Expression.Visitor<Void>, Statement.Visitor<Voi
         }
 
         endScope();
+
+        if (statement.superclass != null) endScope();
 
         currentClass = enclosingClass;
 
@@ -300,4 +314,14 @@ public class Resolver implements Expression.Visitor<Void>, Statement.Visitor<Voi
         return null;
     }
     
+    @Override
+    public Void visitSuperExpression(Expression.Super expression) {
+        if (currentClass == ClassType.NONE) {
+            Lox.error(expression.keyword, "Can't use 'super' outside of a class.");
+        } else if (currentClass == ClassType.CLASS) {
+            Lox.error(expression.keyword, "Can't use 'super' in a class with no superclass.");
+        }
+        resolveLocal(expression, expression.keyword);
+        return null;
+    }
 }

@@ -42,6 +42,12 @@ public class Parser {
     private Statement classDeclaration() {
         Token name = consume(TokenType.IDENTIFIER, "Expected class name.");
 
+        Expression.Variable superclass = null;
+        if (match(TokenType.LESS)) {
+            consume(TokenType.IDENTIFIER, "Expected superclass name.");
+            superclass = new Expression.Variable(previous());
+        }
+
         consume(TokenType.LEFT_BRACE, "Expected '{' before class body.");
         List<Statement.Function> methods = new ArrayList<>();
         List<Statement.Function> getters = new ArrayList<>();
@@ -70,7 +76,7 @@ public class Parser {
         }
         consume(TokenType.RIGHT_BRACE, "Expected '}' after class body.");
 
-        return new Statement.Class(name, methods, getters);
+        return new Statement.Class(name, superclass, methods, getters);
     }
 
     private Statement.Function function(String kind) {
@@ -416,6 +422,13 @@ public class Parser {
 
         if (match(TokenType.NUMBER, TokenType.STRING)) {
             return new Expression.Literal(previous().literal);
+        }
+
+        if (match(TokenType.SUPER)) {
+            Token keyword = previous();
+            consume(TokenType.DOT, "Expected '.' after 'super'.");
+            Token method = consume(TokenType.IDENTIFIER, "Expected superclass method name.");
+            return new Expression.Super(keyword, method);
         }
 
         if (match(TokenType.LEFT_PAREN)) {

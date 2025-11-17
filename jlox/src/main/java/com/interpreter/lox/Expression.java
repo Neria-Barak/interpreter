@@ -17,6 +17,7 @@ abstract class Expression {
 		T visitGetExpression(Get expression);
 		T visitSetExpression(Set expression);
 		T visitThisExpression(This expression);
+		T visitSuperExpression(Super expression);
 	}
 
 	static class Assign extends Expression {
@@ -203,6 +204,20 @@ abstract class Expression {
 		@Override
 		<T> T accept(Visitor<T> visitor) {
 			return visitor.visitThisExpression(this);
+		}
+	}
+	static class Super extends Expression {
+		final Token keyword;
+		final Token method;
+
+		Super(Token keyword, Token method) {
+			this.keyword = keyword;
+			this.method = method;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitSuperExpression(this);
 		}
 	}
 
