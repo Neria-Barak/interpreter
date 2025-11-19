@@ -324,4 +324,28 @@ public class Resolver implements Expression.Visitor<Void>, Statement.Visitor<Voi
         resolveLocal(expression, expression.keyword);
         return null;
     }
+
+    @Override
+    public Void visitArrayExpression(Expression.Array expression) {
+        for (Expression expr : expression.elements) {
+            resolve(expr);
+        }
+        
+        return null;
+    }
+
+    @Override
+    public Void visitSubscriptionExpression(Expression.Subscription expression) {
+        resolve(expression.arr);
+        resolve(expression.index);
+        return null;
+    }
+
+    @Override
+    public Void visitArrayAssExpression(Expression.ArrayAss expression) {
+        resolve(expression.array);
+        resolve(expression.index);
+        resolve(expression.value);
+        return null;
+    }
 }

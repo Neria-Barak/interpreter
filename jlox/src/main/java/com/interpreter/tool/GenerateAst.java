@@ -26,7 +26,10 @@ public class GenerateAst {
             "Get : Expression object, Token name",
             "Set : Expression object, Token name, Expression value",
             "This : Token keyword",
-            "Super : Token keyword, Token method"
+            "Super : Token keyword, Token method",
+            "Array : List<Expression> elements",
+            "Subscription : Expression arr, Token bracket, Expression index",
+            "ArrayAss : Expression array, Expression index, Expression value, Token bracket"
         ));
 
         defineAst(outputDir, "Statement", Arrays.asList(

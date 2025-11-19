@@ -18,6 +18,9 @@ abstract class Expression {
 		T visitSetExpression(Set expression);
 		T visitThisExpression(This expression);
 		T visitSuperExpression(Super expression);
+		T visitArrayExpression(Array expression);
+		T visitSubscriptionExpression(Subscription expression);
+		T visitArrayAssExpression(ArrayAss expression);
 	}
 
 	static class Assign extends Expression {
@@ -218,6 +221,52 @@ abstract class Expression {
 		@Override
 		<T> T accept(Visitor<T> visitor) {
 			return visitor.visitSuperExpression(this);
+		}
+	}
+	static class Array extends Expression {
+		final List<Expression> elements;
+
+		Array(List<Expression> elements) {
+			this.elements = elements;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitArrayExpression(this);
+		}
+	}
+	static class Subscription extends Expression {
+		final Expression arr;
+		final Token bracket;
+		final Expression index;
+
+		Subscription(Expression arr, Token bracket, Expression index) {
+			this.arr = arr;
+			this.bracket = bracket;
+			this.index = index;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitSubscriptionExpression(this);
+		}
+	}
+	static class ArrayAss extends Expression {
+		final Expression array;
+		final Expression index;
+		final Expression value;
+		final Token bracket;
+
+		ArrayAss(Expression array, Expression index, Expression value, Token bracket) {
+			this.array = array;
+			this.index = index;
+			this.value = value;
+			this.bracket = bracket;
+		}
+
+		@Override
+		<T> T accept(Visitor<T> visitor) {
+			return visitor.visitArrayAssExpression(this);
 		}
 	}
 

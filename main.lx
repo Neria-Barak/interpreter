@@ -1,272 +1,127 @@
-// Lox test suite — exercise as many language features as practical.
-// Each test prints its results, then prints a blank line (print "";)
-// No arrays used. Adjust expected values if your interpreter differs.
+print "=== literal creation ===";
+print [1, 2, 3];                   // expect: [1, 2, 3]
+print [];                          // empty array
 
-//
-// 1) Arithmetic, precedence, unary, grouping
-//
-print 1 + 2 * 3; // expect 7
-print (1 + 2) * 3; // expect 9
-print -5 + 2; // expect -3
-print 3 > 2 and 2 < 4; // expect true
 print "";
 
-//
-// 2) Variables, reassignment, shadowing, block scope
-//
-var a = "global";
-{
-var a = "inner";
-print a; // expect "inner"
-}
-print a; // expect "global"
-fun scopeTest() {
-var a = "func";
-{
-var a = "nested";
-print a; // expect "nested"
-}
-print a; // expect "func"
-}
-scopeTest();
+print "=== nested arrays ===";
+var a = [1, [2, 3], 4];
+print a[0];                        // 1
+print a[1][0];                     // 2
+print a[1][1];                     // 3
+print a[2];                        // 4
+
 print "";
 
-//
-// 3) If / else
-//
-fun check(x) {
-if (x > 0) {
-print "positive";
-} else if (x < 0) {
-print "negative";
-} else {
-print "zero";
-}
-}
-check(5); // positive
-check(-2); // negative
-check(0); // zero
+print "=== variable assignment and access ===";
+var x = [10, 20, 30];
+print x[0];                        // 10
+print x[1];                        // 20
+print x[2];                        // 30
+
 print "";
 
-//
-// 4) Loops and break
-//
+print "=== mutation ===";
+x[1] = 99;
+print x;                           // expect [10, 99, 30]
+
+x[0] = x[2];
+print x;                           // expect [30, 99, 30]
+
+print "";
+
+print "=== aliasing / reference semantics ===";
+var y = x;
+y[1] = 777;
+print x;                           // should show the mutation if arrays are references
+print y;
+
+print "";
+
+/*
+print "=== arrays inside objects (if objects exist) ===";
+var o = {
+  arr: [5, 6, 7]
+};
+print o.arr[1];                    // 6
+o.arr[1] = 123;
+print o.arr;                       // [5, 123, 7]
+
+print "";
+*/
+
+print "=== dynamic index expressions ===";
 var i = 0;
-while (true) {
-i = i + 1;
-if (i == 3) break;
+var z = [100, 200, 300];
+print z[i];                        // 100
+i = 1 + 1;
+print z[i];                        // 300
+
+print "";
+
+print "=== using array elements inside expressions ===";
+var m = [2, 3];
+print m[0] + m[1] * 10;            // 2 + 30 = 32
+
+print "";
+
+print "=== array in function return ===";
+fun make() {
+  return [8, 9];
 }
-print i; // expect 3
+var r = make();
+print r;                           // [8, 9]
+r[0] = 123;
+print r;                           // [123, 9]
+
+print "";
+
+print "=== passing arrays to functions ===";
+fun bump(arr) {
+  arr[0] = arr[0] + 1;
+}
+var q = [50];
+bump(q);
+print q[0];                        // 51
+
+print "";
+
+print "=== deep nesting & mutation ===";
+var deep = [[1], [2], [3]];
+deep[1][0] = 999;
+print deep;                        // [[1], [999], [3]]
+
 print "";
 
 /*
-//
-// 5) Functions: parameters, return, nil when none returned
-//
-fun add(x, y) {
-return x + y;
-}
-print add(10, 20); // expect 30
+print "=== out-of-bounds access (may throw or print nil depending on your design) ===";
+var ob = [1,2,3];
+print ob[10];                      // check behavior
 
-fun noReturn() {
-var x = 1;
-}
-print noReturn(); // expect nil
-print "";
-*/
-
-//
-// 6) First-class functions and assignment
-//
-fun mul(a, b) {
-return a * b;
-}
-var times = mul;
-print times(4, 5); // expect 20
 print "";
 
-//
-// 7) Closures and captured state
-//
-fun makeCounter() {
-var count = 0;
-fun inc() {
-count = count + 1;
-return count;
-}
-return inc;
-}
-var c = makeCounter();
-print c(); // 1
-print c(); // 2
-print c(); // 3
+print "=== assignment out-of-bounds (should error or handle per your spec) ===";
+var ob2 = [7,8];
+ob2[5] = 42;
+print ob2;                         // see if you allow sparse arrays or error out
+
+print "";*/
+
+print "=== arrays with different types ===";
+var mix = [1, "hi", true, nil, [9]];
+print mix[0];
+print mix[1];
+print mix[2];
+print mix[3];
+print mix[4][0];
+
 print "";
 
-//
-// 8) Closure captures lexical environment (test lifetimes)
-//
-var later;
-{
-var v = "captured";
-fun show() { return v; }
-later = show;
-}
-print later(); // expect "captured"
-print "";
+print "=== overwrite an array element with another array ===";
+var w = [1,2,3];
+w[1] = ["a", "b"];
+print w[1][0];                     // "a"
+print w[1][1];                     // "b"
+print w;                           // [1, ["a","b"], 3]
 
-//
-// 9) Recursion
-//
-fun fact(n) {
-if (n <= 1) return 1;
-return n * fact(n - 1);
-}
-print fact(5); // expect 120
 print "";
-
-//
-// 10) Equality and nil
-//
-print (1 == 1); // true
-print (1 != 2); // true
-print (nil == nil); // true
-print (nil != 0); // true (nil !== any non-nil)
-print "";
-
-//
-// 11) Strings concatenation and to-string
-//
-print "hello " + "world"; // expect "hello world"
-print "";
-
-//
-// 12) Logical operators short-circuit behavior
-//
-fun left() {
-print "left-evaluated";
-return true;
-}
-fun right() {
-print "right-evaluated";
-return false;
-}
-print (left() or right()); // left-evaluated, then prints true
-print (false and right()); // short-circuits, right not evaluated, prints false
-print "";
-
-//
-// 13) Methods, fields, this, constructors (init)
-//
-class Point {
-init(x, y) {
-this.x = x;
-this.y = y;
-}
-dist() {
-return (this.x * this.x) + (this.y * this.y);
-}
-}
-var p = Point(3, 4);
-print p.dist(); // expect 25
-print "";
-
-//
-// 14) Methods as closures (method bound to instance)
-//
-class Acc {
-init() { this.v = 0; }
-inc() { this.v = this.v + 1; return this.v; }
-}
-var a1 = Acc();
-var m = a1.inc;
-print m(); // expect 1 (method bound to receiver)
-print m(); // expect 2
-print "";
-
-//
-// 15) Inheritance and super
-//
-class A {
-greet() { return "A"; }
-}
-class B < A {
-greet() { return "B-" + super.greet(); }
-}
-var b = B();
-print b.greet(); // expect "B-A"
-print "";
-
-//
-// 16) Overriding and calling super with state
-//
-class Animal {
-init(name) { this.name = name; }
-speak() { return this.name + " makes noise"; }
-}
-class Dog < Animal {
-speak() { return super.speak() + " -> woof"; }
-}
-var dog = Dog("Rex");
-print dog.speak(); // "Rex makes noise -> woof"
-print "";
-
-/*
-//
-// 17) Multiple closures capturing different variables
-//
-fun outerMaker() {
-var x = 10;
-fun getX() { return x; }
-var y = 20;
-fun getY() { return y; }
-return [getX, getY]; // NOTE: can't use arrays in your interpreter; below we avoid arrays.
-}
-// Instead, simulate returning two closures via an object:
-class Pair {
-init(a, b) { this.a = a; this.b = b; }
-}
-fun makePairOfClosures() {
-var x = 7;
-fun getX() { return x; }
-var y = 8;
-fun getY() { return y; }
-return Pair(getX, getY);
-}
-var pair = makePairOfClosures();
-print pair.a(); // expect 7
-print pair.b(); // expect 8
-print "";
-*/
-
-//
-// 18) Ensure initializer returns instance (implicit)
-//
-class C {
-init() { this.ok = "yes"; }
-check() { return this.ok; }
-}
-var cObj = C();
-print cObj.check(); // expect "yes"
-print "";
-
-//
-// 19) Higher-order functions and composition
-//
-fun compose(f, g) {
-fun h(x) { return f(g(x)); }
-return h;
-}
-fun inc1(n) { return n + 1; }
-fun mul2(n) { return n * 2; }
-var doubInc = compose(inc1, mul2);
-print doubInc(3); // mul2(3)=6, inc1(6)=7 -> expect 7
-print "";
-
-//
-// 20) Edge: calling a non-function should error in a real interpreter — here we only test valid call
-//
-fun identity(x) { return x; }
-print identity("works");
-print "";
-
-// End of test suite. If any test fails, check: scoping, closures, methods, super, returns, and truthiness.

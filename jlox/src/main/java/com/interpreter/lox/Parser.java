@@ -281,6 +281,9 @@ public class Parser {
             } else if (expression instanceof Expression.Get) {
                 Expression.Get get = (Expression.Get)expression;
                 return new Expression.Set(get.object, get.name, value);
+            } else if (expression instanceof Expression.Subscription) {
+                Expression.Subscription ass = (Expression.Subscription)expression;
+                return new Expression.ArrayAss(ass.arr, ass.index, value, ass.bracket);
             }
 
             error(equals, "Invalid assignment target.");
@@ -391,6 +394,8 @@ public class Parser {
         while (true) {
             if (match(TokenType.LEFT_PAREN)) {
                 expression = finishCall(expression);
+            } else if (match(TokenType.LEFT_BRACKET)) {
+                expression = subscription(expression);
             } else if (match(TokenType.DOT)) {
                 Token name = consume(TokenType.IDENTIFIER, "Expected property name after '.'.");
                 expression = new Expression.Get(expression, name);
@@ -399,6 +404,12 @@ public class Parser {
             }
         }
         return expression;
+    }
+
+    private Expression subscription(Expression arr) {
+        Expression index = assignment();
+        Token bracket = consume(TokenType.RIGHT_BRACKET, "Expected ']' after index");
+        return new Expression.Subscription(arr, bracket, index);
     }
 
     private Expression finishCall(Expression callee) {
@@ -413,6 +424,19 @@ public class Parser {
         }
         Token paren = consume(TokenType.RIGHT_PAREN, "Expected ')' after arguments.");
         return new Expression.Call(callee, paren, arguments);
+    }
+
+    private Expression array() {
+        List<Expression> arr = new ArrayList<>();
+        if (match(TokenType.RIGHT_BRACKET)) return new Expression.Array(arr);
+
+        do {
+            arr.add(assignment());
+        } while (match(TokenType.COMMA));
+
+        consume(TokenType.RIGHT_BRACKET, "Expected ']' after array elements.");
+
+        return new Expression.Array(arr);
     }
 
     private Expression primary() {
@@ -435,6 +459,10 @@ public class Parser {
             Expression expression = expression();
             consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.");
             return new Expression.Grouping(expression); 
+        }
+
+        if (match(TokenType.LEFT_BRACKET)) {
+            return array();
         }
 
         if (match(TokenType.THIS)) return new Expression.This(previous());

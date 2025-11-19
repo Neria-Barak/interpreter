@@ -62,6 +62,18 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
             }
             return text;
         }
+        if (obj instanceof List<?>) {
+            StringBuilder ret = new StringBuilder("[");
+            List<?> arr = (List<?>)obj;
+            int i;
+            for (i = 0; i < arr.size() - 1; i++) {
+                ret.append(stringify(arr.get(i)));
+                ret.append(", ");
+            }
+            if (arr.size() > 0) ret.append(stringify(arr.get(i)));
+            ret.append("]");
+            return ret.toString();
+        }
         return obj.toString();
     }
 
@@ -260,6 +272,56 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         }
 
         return method.bind(object);
+    }
+
+    @Override
+    public Object visitArrayExpression(Expression.Array expression) {
+        List<Object> arr = new ArrayList<>();
+        for (Expression expr : expression.elements) {
+            arr.add(evaluate(expr));
+        }
+        return arr;
+    }
+
+    @Override
+    public Object visitSubscriptionExpression(Expression.Subscription expression) {
+        Object arr = evaluate(expression.arr);
+        if (!(arr instanceof List<?>)) {
+            throw new RuntimeError(expression.bracket, "Can only access index of arrays.");
+        }
+        List<?> list = (List<?>)arr;
+        Object index = evaluate(expression.index);
+        if (!(index instanceof Double) || ((Double)index % 1) != 0) {
+            throw new RuntimeError(expression.bracket, "Index must be integer.");
+        }
+        
+        int intIndex = ((Double)index).intValue();
+        if (intIndex > list.size()) {
+            throw new RuntimeError(expression.bracket, "Index out of bounds.");
+        }
+        return list.get(intIndex);
+    }
+
+    @Override
+    public Object visitArrayAssExpression(Expression.ArrayAss expression) {
+        Object array = evaluate(expression.array);
+        Object index = evaluate(expression.index);
+        Object value = evaluate(expression.value);
+        
+        if (!(array instanceof List<?>)) {
+            throw new RuntimeError(expression.bracket, "Can only access index of arrays.");
+        }
+        @SuppressWarnings("unchecked")
+        List<Object> list = (List<Object>)array;
+        if (!(index instanceof Double) || ((Double)index % 1) != 0) {
+            throw new RuntimeError(expression.bracket, "Index must be integer.");
+        }
+
+        int intIndex = ((Double)index).intValue();
+        if (intIndex > list.size()) {
+            throw new RuntimeError(expression.bracket, "Index out of bounds.");
+        }
+        return list.set(intIndex, value);
     }
 
     private boolean isTrue(Object obj) {
