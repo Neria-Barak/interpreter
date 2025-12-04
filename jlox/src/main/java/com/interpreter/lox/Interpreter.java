@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Interpreter implements Expression.Visitor<Object>, Statement.Visitor<Void> {
     final Environment globals = new Environment();
@@ -23,6 +24,22 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
 
             @Override
             public String toString() { return "<native fn>"; }
+        });
+
+        globals.define("input", new LoxCallable() {
+
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                @SuppressWarnings("resource")
+                Scanner scanner = new Scanner(System.in);
+                return scanner.nextLine();
+            }
+
+            @Override
+            public int arity() {
+                return 0;
+            }
+            
         });
     }
     
@@ -291,12 +308,12 @@ public class Interpreter implements Expression.Visitor<Object>, Statement.Visito
         }
         List<?> list = (List<?>)arr;
         Object index = evaluate(expression.index);
-        if (!(index instanceof Double) || ((Double)index % 1) != 0) {
-            throw new RuntimeError(expression.bracket, "Index must be integer.");
+        if (!(index instanceof Double) || ((Double)index % 1) != 0 || ((Double)index) < 0) {
+            throw new RuntimeError(expression.bracket, "Index must be a positive integer.");
         }
         
         int intIndex = ((Double)index).intValue();
-        if (intIndex > list.size()) {
+        if (intIndex >= list.size()) {
             throw new RuntimeError(expression.bracket, "Index out of bounds.");
         }
         return list.get(intIndex);

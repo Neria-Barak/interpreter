@@ -52,6 +52,9 @@ public class Lox {
         Parser parser = new Parser(tokens);
         List<Statement> statements = parser.parse();
 
+        // AstPrinter printer = new AstPrinter();
+        // System.out.println(printer.print(statements));
+
         if (hadError) return;
 
         Resolver resolver = new Resolver(interpreter);

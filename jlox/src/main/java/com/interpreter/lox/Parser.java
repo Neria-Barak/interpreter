@@ -361,7 +361,7 @@ public class Parser {
 
         while (match(TokenType.MINUS, TokenType.PLUS)) {
             Token operator = previous();
-            Expression right = comparison();
+            Expression right = factor();
             expression = new Expression.Binary(expression, operator, right);
         }
 
