@@ -49,7 +49,7 @@ static bool match(char expected) {
     return *scanner.current == expected && scanner.current++;
 }
 
-static bool peek() {
+static char peek() {
     return *scanner.current;
 }
 
