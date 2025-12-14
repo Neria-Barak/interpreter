@@ -1,1 +1,5 @@
-"st" == "st"
+var x = 5;
+x = x * 4;
+print x + 2*x;
+x * 2;
+print x;
