@@ -57,7 +57,7 @@ int addConstant(Chunk* chunk, Value value) {
 
 void writeConstant(Chunk* chunk, Value value, int line) {
     int constant = addConstant(chunk, value);
-    if (constant > 255) {
+    if (constant > UINT8_MAX) {
         writeChunk(chunk, OP_CONSTANT_LONG, line);
         writeChunk(chunk, (constant >> 16) & 0xFF, line);
         writeChunk(chunk, (constant >> 8 ) & 0xFF, line);

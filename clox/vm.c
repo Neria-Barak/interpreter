@@ -30,6 +30,9 @@ static void runtimeError(const char* format, ...) {
 void initVM() {
     resetStack();
     vm.objects = NULL;
+    vm.stack = NULL;
+    vm.stackCapacity = 0;
+    vm.sp = NULL;
     initTable(&vm.globals);
     initTable(&vm.strings);
 }
@@ -65,7 +68,8 @@ static void concatenate() {
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
-#define READ_CONSTANT_LONG() (vm.chunk->constants.values[((READ_BYTE() << 16) | (READ_BYTE() << 8) | (READ_BYTE()))])
+#define READ_LONG() ((READ_BYTE() << 16) | (READ_BYTE() << 8) | (READ_BYTE()))
+#define READ_CONSTANT_LONG() (vm.chunk->constants.values[READ_LONG()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) \
     do { \
@@ -99,7 +103,7 @@ static InterpretResult run() {
                 break;
             case OP_CONSTANT_LONG:
                 Value constant_long = READ_CONSTANT_LONG();
-                push(constant);
+                push(constant_long);
                 break;
             case OP_NIL: push(NIL_VAL); break;
             case OP_TRUE: push(BOOL_VAL(true)); break;
@@ -117,6 +121,16 @@ static InterpretResult run() {
             }
             case OP_SET_LOCAL: {
                 uint8_t slot = READ_BYTE();
+                vm.stack[slot] = peek(0);
+                break;
+            }
+            case OP_GET_LOCAL_LONG: {
+                int slot = READ_LONG();
+                push(vm.stack[slot]);
+                break;
+            }
+            case OP_SET_LOCAL_LONG: {
+                int slot = READ_LONG();
                 vm.stack[slot] = peek(0);
                 break;
             }
@@ -209,6 +223,19 @@ InterpretResult interpret(const char* source) {
 }
 
 void push(Value value) {
+    // if (vm.endStack < vm.sp + 1) {
+    //     int oldCapacity = vm.endStack - vm.stack;
+    //     int newCapacity = oldCapacity < 8 ? 8 : oldCapacity * 2;
+    //     vm.stack = GROW_ARRAY(Value, vm.stack, oldCapacity, newCapacity);
+    //     vm.endStack = vm.stack + newCapacity;
+    // }
+    if (vm.sp == NULL || vm.stack + vm.stackCapacity < vm.sp + 1) {
+        int oldCount = vm.sp - vm.stack;
+        int oldCapacity = vm.stackCapacity;
+        vm.stackCapacity = GROW_CAPACITY(vm.stackCapacity);
+        vm.stack = GROW_ARRAY(Value, vm.stack, oldCapacity, vm.stackCapacity);
+        vm.sp = vm.stack + oldCount;
+    }
     *vm.sp++ = value;
 }
 

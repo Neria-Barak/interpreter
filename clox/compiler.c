@@ -1,6 +1,7 @@
 #include "compiler.h"
 #include "common.h"
 #include "scanner.h"
+#include "memory.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -46,8 +47,9 @@ typedef struct {
 } Local;
 
 typedef struct {
-    Local locals[UINT8_COUNT];
+    Local* locals;
     int localCount;
+    int localCapacity;
     int scopeDepth;
 } Compiler;
 
@@ -171,6 +173,8 @@ static void emitConstant(Value value) {
 static void initCompiler(Compiler* compiler) {
     compiler->localCount = 0;
     compiler->scopeDepth = 0;
+    compiler->localCapacity = 0;
+    compiler->locals = NULL;
     current = compiler;
 }
 
@@ -205,6 +209,22 @@ static int resolveLocal(Compiler* compiler, Token* name) {
     return -1;
 }
 
+static void emitLongLocal(int arg, bool constant, bool canAssign) {
+    if (canAssign && match(TOKEN_EQUAL)) {
+        if (constant) {
+            error("Cannot assign value to constant variable.");
+            return;
+        }
+        expression();
+        emitByte(OP_SET_LOCAL_LONG);
+    } else {
+        emitByte(OP_GET_LOCAL_LONG);
+    }
+    emitByte((arg >> 16) & 0xFF);
+    emitByte((arg >> 8 ) & 0xFF);
+    emitByte((arg      ) & 0xFF);
+}
+
 static void namedVariable(Token name, bool canAssign) {
     uint8_t getOp, setOp;
     int arg = resolveLocal(current, &name);
@@ -214,6 +234,10 @@ static void namedVariable(Token name, bool canAssign) {
         setOp = OP_SET_LOCAL;
         constant = arg & 1;
         arg >>= 1;
+        if (arg > UINT8_MAX) {
+            emitLongLocal(arg, constant, canAssign);
+            return;
+        }
     } else {
         arg = identifierConstant(&name);
         getOp = OP_GET_GLOBAL;
@@ -361,9 +385,10 @@ static void statement() {
 }
 
 static void addLocal(Token name, bool constant) {
-    if (current->localCount == UINT8_COUNT) {
-        error("Too many local variables in function");
-        return;
+    if (current->localCapacity < current->localCount + 1) {
+        int oldCapacity = current->localCapacity;
+        current->localCapacity = GROW_CAPACITY(oldCapacity);
+        current->locals = GROW_ARRAY(Local, current->locals, oldCapacity, current->localCapacity);
     }
     Local* local = &current->locals[current->localCount++];
     local->depth = -1;
