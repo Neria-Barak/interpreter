@@ -1,5 +1,16 @@
-{
-	for (var x = 0; x < 10; x = x + 1) {
-		print x;
-	}
+var x = 11;
+switch (x / 2) {
+	case 2*2: 
+		print 4;
+		print "what are you doing here?";
+	case 5/1: 
+		print "success!";
+		x = x / 2;
+	case 10-4:
+		print 6;
+		print "no";
+	default: 
+		print "default";
+		x = x * 5;
 }
+print x;

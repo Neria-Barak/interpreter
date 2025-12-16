@@ -409,6 +409,57 @@ static void ifStatement() {
     patchJump(elseJump);
 }
 
+static void switchStatement() {
+    consume(TOKEN_LEFT_PAREN, "Expected '(' after 'switch'.");
+    expression();
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after switch expression.");
+
+    consume(TOKEN_LEFT_BRACE, "Expected '{' after switch expression");
+
+    int ends[UINT8_MAX];
+    int endCount = 0;
+
+    int previous = -1;
+    while (match(TOKEN_CASE)) {
+        if (previous != -1) {
+            patchJump(previous);
+            emitByte(OP_POP);
+        }
+        emitByte(OP_TOP);
+        expression();
+        emitByte(OP_EQUAL);
+        previous = emitJump(OP_JUMP_IF_FALSE);
+        consume(TOKEN_COLON, "Expected ':' after case expression");
+
+        emitByte(OP_POP);
+
+        while (!check(TOKEN_CASE) && !check(TOKEN_EOF) &&
+               !check(TOKEN_RIGHT_BRACE) && !check(TOKEN_DEFAULT)) {
+            statement();
+        }
+
+        if (endCount + 1 > UINT8_MAX) error("Too many cases.");
+        ends[endCount++] = emitJump(OP_JUMP);
+    }
+
+    if (previous != -1) {
+        patchJump(previous);
+        emitByte(OP_POP);
+    }
+    if (match(TOKEN_DEFAULT)) {
+        consume(TOKEN_COLON, "Expected ':' after case expression");
+        while (!check(TOKEN_EOF) && !check(TOKEN_RIGHT_BRACE)) {
+            statement();
+        }        
+    }
+
+    for (int i = 0; i < endCount; i++) {
+        patchJump(ends[i]);
+    }
+
+    consume(TOKEN_RIGHT_BRACE, "Expected '}' after switch-case");
+}
+
 static void emitLoop(int loopStart) {
     emitByte(OP_LOOP);
     int offset = currentChunk()->count - loopStart + 2;
@@ -562,6 +613,8 @@ static void statement() {
         whileStatement();
     } else if (match(TOKEN_FOR)) {
         forStatement();
+    } else if (match(TOKEN_SWITCH)) {
+        switchStatement();
     } else if (match(TOKEN_LEFT_BRACE)) {
         beginScope();
         block();
@@ -612,6 +665,7 @@ ParseRule rules[] = {
   [TOKEN_SEMICOLON]     = {NULL,     NULL,   PREC_NONE},
   [TOKEN_SLASH]         = {NULL,     binary, PREC_FACTOR},
   [TOKEN_STAR]          = {NULL,     binary, PREC_FACTOR},
+  [TOKEN_COLON]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_BANG]          = {unary,     NULL,   PREC_NONE},
   [TOKEN_BANG_EQUAL]    = {NULL,     binary,   PREC_EQUALITY},
   [TOKEN_EQUAL]         = {NULL,     NULL,   PREC_NONE},
@@ -640,6 +694,9 @@ ParseRule rules[] = {
   [TOKEN_VAR]           = {NULL,     NULL,   PREC_NONE},
   [TOKEN_CONST]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_WHILE]         = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_SWITCH]        = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_CASE]          = {NULL,     NULL,   PREC_NONE},
+  [TOKEN_DEFAULT]       = {NULL,     NULL,   PREC_NONE},
   [TOKEN_ERROR]         = {NULL,     NULL,   PREC_NONE},
   [TOKEN_EOF]           = {NULL,     NULL,   PREC_NONE},
 };
