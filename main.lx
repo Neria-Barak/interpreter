@@ -1,12 +1,12 @@
-//fun fib(n) {
-//  if (n < 2) return n;
-//  return fib(n - 2) + fib(n - 1);
-//}
+fun test(x) {
+  var y = 0;
+  while (x  > 0) {
+    y = y + 1;
+    x = x - 1;
+  }
+  return y;
+}
 
-//var start = clock();
-//print fib(30);
-//print clock() - start;
-
-
-var x = input("Enter your name: ", 4);
-print x + " is a loser";
+var start = clock();
+print test(100000000);
+print clock() - start;

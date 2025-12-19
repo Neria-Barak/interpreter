@@ -137,9 +137,11 @@ static bool callValue(Value callee, int argCount) {
     return false;
 }
 
-static InterpretResult run() {
-    CallFrame* frame = &vm.frames[vm.frameCount - 1];
-#define READ_BYTE() (*frame->ip++)  
+static InterpretResult run() {\
+        CallFrame* frame = &vm.frames[vm.frameCount - 1];
+        register uint8_t* ip = frame->ip;
+
+#define READ_BYTE() (*ip++)
 #define READ_SHORT() ((uint16_t)((READ_BYTE() << 8) | (READ_BYTE())))
 #define READ_CONSTANT() (frame->function->chunk.constants.values[READ_BYTE()])
 #define READ_LONG() ((READ_BYTE() << 16) | (READ_BYTE() << 8) | (READ_BYTE()))
@@ -166,7 +168,7 @@ static InterpretResult run() {
             printf(" ]");
         }
         printf("\n");
-        disassembleInstruction(&frame->function->chunk, (int)(frame->ip - frame->function->chunk.code));
+        disassembleInstruction(&frame->function->chunk, (int)(ip - frame->function->chunk.code));
 #endif
 
         uint8_t instruction;
@@ -267,25 +269,27 @@ static InterpretResult run() {
                 break;
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
-                frame->ip += offset;
+                ip += offset;
                 break;
             }
             case OP_JUMP_IF_FALSE: {
                 uint16_t offset = READ_SHORT();
-                if (isFalsey(peek(0))) frame->ip += offset;
+                if (isFalsey(peek(0))) ip += offset;
                 break;
             }
             case OP_LOOP: {
                 int16_t offset = READ_SHORT();
-                frame->ip -= offset;
+                ip -= offset;
                 break;
             }
             case OP_CALL: {
                 int argCount = READ_BYTE();
+                frame->ip = ip;
                 if (!callValue(peek(argCount), argCount)) {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 frame = &vm.frames[vm.frameCount - 1];
+                ip = frame->ip;
                 break;
             }
             case OP_RETURN: {
@@ -299,6 +303,7 @@ static InterpretResult run() {
                 vm.sp = frame->slots;
                 push(result);
                 frame = &vm.frames[vm.frameCount - 1];
+                ip = frame->ip;
                 break;
             }
             default:
