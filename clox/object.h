@@ -14,7 +14,7 @@
 #define AS_STRING(value) ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
 #define AS_FUNCTION(value) ((ObjFunction*)AS_OBJ(value))
-#define AS_NATIVE(value) (((ObjNative*)AS_OBJ(value))->function)
+#define AS_NATIVE(value) (((ObjNative*)AS_OBJ(value)))
 
 typedef enum {
     OBJ_STRING,
@@ -38,6 +38,7 @@ typedef Value (*NativeFn)(int argCount, Value* args);
 
 typedef struct {
     Obj obj;
+    int arity;
     NativeFn function;
 } ObjNative;
 
@@ -49,7 +50,7 @@ struct ObjString {
 };
 
 ObjFunction* newFunction();
-ObjNative* newNative(NativeFn function);
+ObjNative* newNative(NativeFn function, int arity);
 
 static inline bool isObjType(Value value, ObjType type) {
     return IS_OBJ(value) && AS_OBJ(value)->type == type;
