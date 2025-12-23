@@ -1,24 +1,5 @@
-var globalOne;
-var globalTwo;
-
-fun main() {
-  {
-    var a = "one";
-    fun one() {
-      print a;
-    }
-    globalOne = one;
-  }
-
-  {
-    var a = "two";
-    fun two() {
-      print a;
-    }
-    globalTwo = two;
-  }
+fun temp() {
+    var x = input("Enter a string ");
 }
-
-main();
-globalOne();
-globalTwo();
+temp();
+print "Hello World!";
