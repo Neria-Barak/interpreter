@@ -64,6 +64,8 @@ static void skipWhitespace() {
         switch(c) {
             case '\n':
                 scanner.line++;
+                advance();
+                break;
             case ' ':
             case '\r':
             case '\t':
@@ -143,6 +145,7 @@ static TokenType identifierType() {
                     case 'w': return checkKeyword(2, 4, "itch", TOKEN_SWITCH);
                 }
             }
+            break;
         case 'c': 
             if (scanner.current - scanner.start > 1) {
                 switch (scanner.start[1]) {
@@ -151,6 +154,7 @@ static TokenType identifierType() {
                     case 'a': return checkKeyword(2, 2, "se", TOKEN_CASE);
                 }
             }
+            break;
         case 'f':
             if (scanner.current - scanner.start > 1) {
                 switch (scanner.start[1]) {

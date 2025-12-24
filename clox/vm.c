@@ -47,11 +47,12 @@ static void defineNative(const char* name, NativeFn function, int arity) {
     pop();
 }
 
-static Value clockNative(int argCount, Value* args) {
+static Value clockNative(Value* args) {
+    (void)args;
     return NUMBER_VAL((double)clock() / CLOCKS_PER_SEC);
 }
 
-static Value inputNative(int argCount, Value* args) {
+static Value inputNative(Value* args) {
     char buffer[256];
     printValue(args[0]);
     scanf("%[^\n]", buffer);
@@ -137,12 +138,13 @@ static bool callValue(Value callee, int argCount) {
                     runtimeError("Expected %d arguments but got %d.", native->arity, argCount);
                     return false;
                 }
-                Value result = native->function(argCount, vm.sp - argCount);
+                Value result = native->function(vm.sp - argCount);
                 vm.sp -= argCount + 1;
                 push(result);
                 return true;
             case OBJ_CLOSURE:
                 return call(AS_CLOSURE(callee), argCount);
+            default: return false;
         }
     }
     runtimeError("Can only call functions and classes.");
@@ -169,6 +171,8 @@ static ObjUpvalue* captureUpvalue(Value* local) {
     } else {
         prevUpvalue->next = createdUpvalue;
     }
+
+    return createdUpvalue;
 }
 
 static void closeUpvalue(Value* last) {
@@ -185,9 +189,9 @@ static InterpretResult run() {
         register uint8_t* ip = frame->ip;
 
 #define READ_BYTE() (*ip++)
-#define READ_SHORT() ((uint16_t)((READ_BYTE() << 8) | (READ_BYTE())))
+#define READ_SHORT() (ip += 2, (uint16_t)(ip[-2] << 8) | (ip[-1]))
 #define READ_CONSTANT() (frame->closure->function->chunk.constants.values[READ_BYTE()])
-#define READ_LONG() ((READ_BYTE() << 16) | (READ_BYTE() << 8) | (READ_BYTE()))
+#define READ_LONG() (ip += 3, (uint16_t)(ip[-3] << 16) | (ip[-2] << 8) | (ip[-1]))
 #define READ_CONSTANT_LONG() (frame->closure->function->chunk.constants.values[READ_LONG()])
 #define READ_STRING() AS_STRING(READ_CONSTANT())
 #define BINARY_OP(valueType, op) \
@@ -379,6 +383,10 @@ static InterpretResult run() {
                 push(result);
                 frame = &vm.frames[vm.frameCount - 1];
                 ip = frame->ip;
+                break;
+            }
+            case OP_CLASS: {
+                push(OBJ_VAL(newClass(READ_STRING())));
                 break;
             }
             default:

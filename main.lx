@@ -1,5 +1,2 @@
-fun temp() {
-    var x = input("Enter a string ");
-}
-temp();
-print "Hello World!";
+class Brioche {}
+print Brioche;

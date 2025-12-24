@@ -225,11 +225,13 @@ static void initCompiler(Compiler* compiler, FunctionType type) {
 }
 
 static void number(bool canAssign) {
+    (void)canAssign;
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
 
 static void string(bool canAssign) {
+    (void)canAssign;
     emitConstant(OBJ_VAL(copyString(parser.previous.start + 1, parser.previous.length - 2)));
 }
 
@@ -348,11 +350,13 @@ static void variable(bool canAssign) {
 }
 
 static void grouping(bool canAssign) {
+    (void)canAssign;
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expected ')' after expression.");
 }
 
 static void unary(bool canAssign) {
+    (void)canAssign;
     TokenType operatorType = parser.previous.type;
 
     parsePrecedence(PREC_UNARY);
@@ -365,6 +369,7 @@ static void unary(bool canAssign) {
 }
 
 static void binary(bool canAssign) {
+    (void)canAssign;
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
@@ -400,15 +405,18 @@ static uint8_t argList() {
 }
 
 static void call(bool canAssign) {
+    (void)canAssign;
     uint8_t argCount = argList();
     emitBytes(OP_CALL, argCount);
 }
 
 static void literal(bool canAssign) {
+    (void)canAssign;
     switch (parser.previous.type) {
         case TOKEN_NIL: emitByte(OP_NIL); break;
         case TOKEN_TRUE: emitByte(OP_TRUE); break;
         case TOKEN_FALSE: emitByte(OP_FALSE); break;
+        default: return;
     }
 }
 
@@ -448,7 +456,7 @@ static void synchronize() {
     parser.panicMode = false;
 
     while (parser.current.type == TOKEN_EOF) {
-        if (parser.previous.type = TOKEN_SEMICOLON) return;
+        if (parser.previous.type == TOKEN_SEMICOLON) return;
         switch (parser.current.type) {
             case TOKEN_CLASS:
             case TOKEN_VAR:
@@ -460,6 +468,7 @@ static void synchronize() {
             case TOKEN_PRINT:
             case TOKEN_RETURN:
                 return;
+            default: break;
         }
         advance();
     }
@@ -785,6 +794,7 @@ static void statement() {
 }
 
 static void and_(bool canAssign) {
+    (void)canAssign;
     int endJump = emitJump(OP_JUMP_IF_FALSE);
     emitByte(OP_POP);
     parsePrecedence(PREC_AND);
@@ -792,6 +802,7 @@ static void and_(bool canAssign) {
 }
 
 static void or_(bool canAssign) {
+    (void)canAssign;
     int elseJump = emitJump(OP_JUMP_IF_FALSE);
     int endJump = emitJump(OP_JUMP);
 
@@ -801,8 +812,22 @@ static void or_(bool canAssign) {
     patchJump(endJump);
 }
 
+static void classDeclaration() {
+    consume(TOKEN_IDENTIFIER, "Expected class name.");
+    uint8_t nameConstant = identifierConstant(&parser.previous);
+    declareVariable(false);
+
+    emitBytes(OP_CLASS, nameConstant);
+    defineVariable(nameConstant);
+
+    consume(TOKEN_LEFT_BRACE, "Expected '{' before class body.");
+    consume(TOKEN_RIGHT_BRACE, "Expected '{' after class body.");
+}
+
 static void declaration() {
-    if (match(TOKEN_FUN)) {
+    if (match(TOKEN_CLASS)) {
+        classDeclaration();
+    } else if (match(TOKEN_FUN)) {
         funDeclaration();
     } else if (match(TOKEN_VAR)) {
         varDeclaration(false);

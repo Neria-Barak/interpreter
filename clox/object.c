@@ -53,6 +53,12 @@ ObjUpvalue* newUpvalue(Value* slot) {
     return upvalue;
 }
 
+ObjClass* newClass(ObjString* name) {
+    ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
+    klass->name = name;
+    return klass;
+}
+
 ObjNative* newNative(NativeFn function, int arity) {
     ObjNative* native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
     native->function = function;
@@ -110,6 +116,7 @@ void printObject(Value value) {
         case OBJ_NATIVE: printf("<native fn>"); break;
         case OBJ_CLOSURE: printFunction(AS_CLOSURE(value)->function); break;
         case OBJ_UPVALUE: printf("upvalue"); break;
+        case OBJ_CLASS: printf("%s", AS_CLASS(value)->name->chars); break;
     }
 }
 
