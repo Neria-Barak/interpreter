@@ -56,6 +56,7 @@ ObjUpvalue* newUpvalue(Value* slot) {
 ObjClass* newClass(ObjString* name) {
     ObjClass* klass = ALLOCATE_OBJ(ObjClass, OBJ_CLASS);
     klass->name = name;
+    initTable(&klass->methods);
     return klass;
 }
 
@@ -64,6 +65,13 @@ ObjInstance* newInstance(ObjClass* klass) {
     instance->klass = klass;
     initTable(&instance->fields);
     return instance;
+}
+
+ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method) {
+    ObjBoundMethod* boundMethod = ALLOCATE_OBJ(ObjBoundMethod, OBJ_BOUND_METHOD);
+    boundMethod->receiver = receiver;
+    boundMethod->method = method;
+    return boundMethod;
 }
 
 ObjNative* newNative(NativeFn function, int arity) {
@@ -125,6 +133,7 @@ void printObject(Value value) {
         case OBJ_UPVALUE: printf("upvalue"); break;
         case OBJ_CLASS: printf("%s", AS_CLASS(value)->name->chars); break;
         case OBJ_INSTANCE: printf("%s instance", AS_INSTANCE(value)->klass->name->chars); break;
+        case OBJ_BOUND_METHOD: printFunction(AS_BOUND_METHOD(value)->method->function); break;
     }
 }
 

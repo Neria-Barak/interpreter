@@ -14,6 +14,7 @@
 #define IS_CLOSURE(value) (isObjType(value, OBJ_CLOSURE))
 #define IS_CLASS(value) (isObjType(value, OBJ_CLASS))
 #define IS_INSTANCE(value) (isObjType(value, OBJ_INSTANCE))
+#define IS_BOUND_METHOD(value) (isObjType(value, OBJ_BOUND_METHOD))
 
 #define AS_STRING(value) ((ObjString*)AS_OBJ(value))
 #define AS_CSTRING(value) (((ObjString*)AS_OBJ(value))->chars)
@@ -22,6 +23,7 @@
 #define AS_CLOSURE(value) (((ObjClosure*)AS_OBJ(value)))
 #define AS_CLASS(value) (((ObjClass*)AS_OBJ(value)))
 #define AS_INSTANCE(value) (((ObjInstance*)AS_OBJ(value)))
+#define AS_BOUND_METHOD(value) (((ObjBoundMethod*)AS_OBJ(value)))
 
 typedef enum {
     OBJ_STRING,
@@ -31,6 +33,7 @@ typedef enum {
     OBJ_UPVALUE,
     OBJ_CLASS,
     OBJ_INSTANCE,
+    OBJ_BOUND_METHOD,
 } ObjType;
 
 struct Obj {
@@ -64,6 +67,7 @@ typedef struct {
 typedef struct {
     Obj obj;
     ObjString* name;
+    Table methods;
 } ObjClass;
 
 typedef struct {
@@ -71,6 +75,12 @@ typedef struct {
     ObjClass* klass;
     Table fields;
 } ObjInstance;
+
+typedef struct {
+    Obj obj;
+    Value receiver;
+    ObjClosure* method;
+} ObjBoundMethod;
 
 typedef Value (*NativeFn)(Value* args);
 
@@ -87,6 +97,7 @@ struct ObjString {
     uint32_t hash;
 };
 
+ObjBoundMethod* newBoundMethod(Value receiver, ObjClosure* method);;
 ObjInstance* newInstance(ObjClass* klass);
 ObjClass* newClass(ObjString* name);
 ObjUpvalue* newUpvalue(Value* slot);
